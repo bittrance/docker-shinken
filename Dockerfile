@@ -1,15 +1,13 @@
 # Shinken Docker installation using pip (latest)
 FROM        debian:wheezy
-MAINTAINER  Rohit Gupta
+MAINTAINER  https://github.com/bittrance
 
-# Install Shinken, Nagios plugins, apache2 and supervisord
+# Install Shinken, Nagios plugins and supervisord
 RUN         apt-get update && apt-get install -y python-pip \
                 python-pycurl \
                 python-cherrypy3 \
                 nagios-plugins \
                 libsys-statistics-linux-perl \
-                apache2 \
-                libapache2-mod-proxy-html \
                 supervisor \
                 libssl-dev \
                 python-crypto \
@@ -17,14 +15,13 @@ RUN         apt-get update && apt-get install -y python-pip \
                 ntp
 RUN         useradd --create-home shinken && \
                 pip install shinken && \
-                update-rc.d -f apache2 remove && \
                 update-rc.d -f shinken remove
 
 # Install shinken modules from shinken.io
 RUN         chown -R shinken:shinken /etc/shinken/ && \
                 su - shinken -c 'shinken --init' && \
                 su - shinken -c 'shinken install webui' && \
-                su - shinken -c 'shinken install auth-htpasswd' && \
+                su - shinken -c 'shinken install auth-cfg-password' && \
                 su - shinken -c 'shinken install sqlitedb' && \
                 su - shinken -c 'shinken install pickle-retention-file-scheduler' && \
                 su - shinken -c 'shinken install booster-nrpe' && \
@@ -50,10 +47,6 @@ RUN         cd /usr/src/nrpe-2.15/ && \
                 cd / && \
                 rm -rf /usr/src/nrpe-2.15
 
-# Configure apache
-ADD         shinken/shinken_apache.conf /etc/apache2/conf.d/shinken_apache.conf
-RUN         ln -sf /etc/apache2/mods-available/proxy* /etc/apache2/mods-enabled/
-
 # Configure Shinken modules
 ADD         shinken/shinken.cfg /etc/shinken/shinken.cfg
 ADD         shinken/broker-master.cfg /etc/shinken/brokers/broker-master.cfg
@@ -62,14 +55,15 @@ ADD         shinken/scheduler-master.cfg /etc/shinken/schedulers/scheduler-maste
 ADD         shinken/webui.cfg /etc/shinken/modules/webui.cfg
 ADD         shinken/livestatus.cfg /etc/shinken/modules/livestatus.cfg
 RUN         mkdir -p /etc/shinken/custom_configs /usr/local/custom_plugins && \
-                ln -sf /etc/shinken/custom_configs/htpasswd.users /etc/shinken/htpasswd.users && \
-                rm -f /etc/thruk/htpasswd && \
-                ln -sf /etc/shinken/htpasswd.users /etc/thruk/htpasswd && \
                 chown -R shinken:shinken /etc/shinken/
 
 # Add shinken config watcher to restart arbiter, when changes happen
 ADD         shinken/watch_shinken_config.sh /usr/bin/watch_shinken_config.sh
 RUN         chmod 755 /usr/bin/watch_shinken_config.sh
+
+# For pushing configuration across kubectl
+ADD         catcher.py /usr/bin/catcher
+RUN         chmod 755 /usr/bin/catcher
 
 # Copy extra NRPE plugins and fix permissions
 ADD         extra_plugins/* /usr/lib/nagios/plugins/
@@ -83,8 +77,7 @@ VOLUME      ["/etc/shinken/custom_configs", "/usr/local/custom_plugins"]
 # configure supervisor
 ADD         supervisor/conf.d/* /etc/supervisor/conf.d/
 
-# Expost port 80 (apache2)
-EXPOSE  80
+EXPOSE  7767
 
 # Default docker process
 CMD ["supervisord", "-c", "/etc/supervisor/supervisord.conf", "-n"]
