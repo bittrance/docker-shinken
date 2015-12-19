@@ -14,28 +14,18 @@ RUN         apt-get update && apt-get install -y python-pip \
                 inotify-tools \
                 ntp
 RUN         useradd --create-home shinken && \
-                pip install shinken && \
+                pip install shinken bottle pymongo && \
                 update-rc.d -f shinken remove
 
 # Install shinken modules from shinken.io
 RUN         chown -R shinken:shinken /etc/shinken/ && \
                 su - shinken -c 'shinken --init' && \
-                su - shinken -c 'shinken install webui' && \
+                su - shinken -c 'shinken install webui2' && \
                 su - shinken -c 'shinken install auth-cfg-password' && \
                 su - shinken -c 'shinken install sqlitedb' && \
-                su - shinken -c 'shinken install pickle-retention-file-scheduler' && \
                 su - shinken -c 'shinken install booster-nrpe' && \
                 su - shinken -c 'shinken install logstore-sqlite' && \
                 su - shinken -c 'shinken install livestatus'
-
-# Install and configure thruk
-RUN         gpg --keyserver keys.gnupg.net --recv-keys F8C1CA08A57B9ED7 && \
-                gpg --armor --export F8C1CA08A57B9ED7 | apt-key add - && \
-                echo 'deb http://labs.consol.de/repo/stable/debian wheezy main' >> /etc/apt/sources.list && \
-                apt-get update && \
-                apt-get install -y thruk && \
-                apt-get clean
-ADD         thruk/thruk_local.conf /etc/thruk/thruk_local.conf
 
 # Install check_nrpe plugin
 ADD         nrpe-2.15.tar.gz /usr/src/
