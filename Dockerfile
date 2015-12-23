@@ -42,7 +42,7 @@ ADD         shinken/shinken.cfg /etc/shinken/shinken.cfg
 ADD         shinken/broker-master.cfg /etc/shinken/brokers/broker-master.cfg
 ADD         shinken/poller-master.cfg /etc/shinken/pollers/poller-master.cfg
 ADD         shinken/scheduler-master.cfg /etc/shinken/schedulers/scheduler-master.cfg
-ADD         shinken/webui.cfg /etc/shinken/modules/webui.cfg
+ADD         shinken/webui2.cfg /etc/shinken/modules/webui2.cfg
 ADD         shinken/livestatus.cfg /etc/shinken/modules/livestatus.cfg
 RUN         mkdir -p /etc/shinken/custom_configs /usr/local/custom_plugins && \
                 chown -R shinken:shinken /etc/shinken/
