@@ -9,6 +9,8 @@ parser.add_argument('--reload', dest='reload_command', action='store',
                    help='shell command to execute after received file tree is installed')
 parser.add_argument('target', type=str, nargs=1,
                    help='location to install received file tree')
+parser.add_argument('-v', dest='verbose', action='store_true',
+                   help='verbose output')
 args = parser.parse_args()
 
 target = args.target[0]
@@ -34,16 +36,43 @@ tar.extractall(path=temp)
 if args.validate_command:
     cmd = args.validate_command
     cmd = cmd.replace('{}', temp)
+    if args.verbose: print 'Executing %s' % cmd
     res = os.system(cmd)
     if res > 0:
-        print 'Validation failed - aborting'
+        print >> sys.stderr, 'Validation failed - aborting'
         sys.exit(1)
 
-shutil.move(target, target + '.old')
-shutil.move(temp, target)
+backup = os.path.join(tempfile.gettempdir(), target.replace('/', '_'))
+if os.path.exists(backup):
+    print >> sys.stderr, 'Backup %s left from previous run. Please clean up.' % backup
+    sys.exit(1)
+
+# First, a backup
+shutil.copytree(target, backup)
+
+# Clean target directory without actually deleting target dir itself
+for entry in os.listdir(target):
+    dst = os.path.join(target, entry)
+    if args.verbose: print 'Removing existing %s' % dst
+    if os.path.isdir(dst):
+        shutil.rmtree(dst)
+    else:
+        os.remove(dst)
+
+# Install the contents of tarfile into target dir
+for entry in os.listdir(temp):
+    src = os.path.join(temp, entry)
+    dst = os.path.join(target, entry)
+    if args.verbose: print 'Installing %s' % dst
+    if os.path.isdir(src):
+        shutil.copytree(src, dst)
+    else:
+        shutil.copy2(src, dst)
 
 if args.reload_command:
     res = os.system(args.reload_command)
     if res > 0:
-        print 'Reload failed'
+        print >> sys.stderr, 'Reload failed'
         sys.exit(res)
+
+shutil.rmtree(backup)
