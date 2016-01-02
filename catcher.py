@@ -33,15 +33,6 @@ temp = tempfile.mkdtemp()
 tar = tarfile.open(fileobj=fd, mode='r|*')
 tar.extractall(path=temp)
 
-if args.validate_command:
-    cmd = args.validate_command
-    cmd = cmd.replace('{}', temp)
-    if args.verbose: print 'Executing %s' % cmd
-    res = os.system(cmd)
-    if res > 0:
-        print >> sys.stderr, 'Validation failed - aborting'
-        sys.exit(1)
-
 backup = os.path.join(tempfile.gettempdir(), target.replace('/', '_'))
 if os.path.exists(backup):
     print >> sys.stderr, 'Backup %s left from previous run. Please clean up.' % backup
@@ -69,10 +60,19 @@ for entry in os.listdir(temp):
     else:
         shutil.copy2(src, dst)
 
+shutil.rmtree(backup)
+
+if args.validate_command:
+    cmd = args.validate_command
+    cmd = cmd.replace('{}', temp)
+    if args.verbose: print 'Executing %s' % cmd
+    res = os.system(cmd)
+    if res > 0:
+        print >> sys.stderr, 'Validation failed - aborting'
+        sys.exit(1)
+
 if args.reload_command:
     res = os.system(args.reload_command)
     if res > 0:
         print >> sys.stderr, 'Reload failed'
         sys.exit(res)
-
-shutil.rmtree(backup)

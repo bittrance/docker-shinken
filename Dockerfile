@@ -6,15 +6,17 @@ MAINTAINER  https://github.com/bittrance
 RUN         apt-get update && apt-get install -y python-pip \
                 python-pycurl \
                 python-cherrypy3 \
+                python-dev \
                 nagios-plugins \
                 libsys-statistics-linux-perl \
                 supervisor \
                 libssl-dev \
                 python-crypto \
                 inotify-tools \
-                ntp
+                ntp git
 RUN         useradd --create-home shinken && \
-                pip install shinken bottle pymongo && \
+                pip install bottle pymongo && \
+                pip install git+https://github.com/bittrance/shinken.git@packaging-standard-config && \
                 update-rc.d -f shinken remove
 
 # Install shinken modules from shinken.io
@@ -38,6 +40,7 @@ RUN         cd /usr/src/nrpe-2.15/ && \
                 rm -rf /usr/src/nrpe-2.15
 
 # Configure Shinken modules
+RUN         rm /etc/shinken/contacts/*.cfg
 ADD         shinken/shinken.cfg /etc/shinken/shinken.cfg
 ADD         shinken/broker-master.cfg /etc/shinken/brokers/broker-master.cfg
 ADD         shinken/poller-master.cfg /etc/shinken/pollers/poller-master.cfg
@@ -46,10 +49,6 @@ ADD         shinken/webui2.cfg /etc/shinken/modules/webui2.cfg
 ADD         shinken/livestatus.cfg /etc/shinken/modules/livestatus.cfg
 RUN         mkdir -p /etc/shinken/custom_configs /usr/local/custom_plugins && \
                 chown -R shinken:shinken /etc/shinken/
-
-# Add shinken config watcher to restart arbiter, when changes happen
-ADD         shinken/watch_shinken_config.sh /usr/bin/watch_shinken_config.sh
-RUN         chmod 755 /usr/bin/watch_shinken_config.sh
 
 # For pushing configuration across kubectl
 ADD         catcher.py /usr/bin/catcher
