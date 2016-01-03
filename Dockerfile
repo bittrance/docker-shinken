@@ -12,10 +12,9 @@ RUN         apt-get update && apt-get install -y python-pip \
                 supervisor \
                 libssl-dev \
                 python-crypto \
-                inotify-tools \
                 ntp git
 RUN         useradd --create-home shinken && \
-                pip install bottle pymongo && \
+                pip install bottle pymongo requests arrow && \
                 pip install git+https://github.com/bittrance/shinken.git@packaging-standard-config && \
                 update-rc.d -f shinken remove
 
@@ -24,10 +23,9 @@ RUN         chown -R shinken:shinken /etc/shinken/ && \
                 su - shinken -c 'shinken --init' && \
                 su - shinken -c 'shinken install webui2' && \
                 su - shinken -c 'shinken install auth-cfg-password' && \
-                su - shinken -c 'shinken install sqlitedb' && \
                 su - shinken -c 'shinken install booster-nrpe' && \
-                su - shinken -c 'shinken install logstore-sqlite' && \
-                su - shinken -c 'shinken install livestatus'
+                su - shinken -c 'shinken install retention-mongodb' && \
+                su - shinken -c 'shinken install mongo-logs'
 
 # Install check_nrpe plugin
 ADD         nrpe-2.15.tar.gz /usr/src/
@@ -46,7 +44,7 @@ ADD         shinken/broker-master.cfg /etc/shinken/brokers/broker-master.cfg
 ADD         shinken/poller-master.cfg /etc/shinken/pollers/poller-master.cfg
 ADD         shinken/scheduler-master.cfg /etc/shinken/schedulers/scheduler-master.cfg
 ADD         shinken/webui2.cfg /etc/shinken/modules/webui2.cfg
-ADD         shinken/livestatus.cfg /etc/shinken/modules/livestatus.cfg
+ADD         shinken/mongo-logs.cfg /etc/shinken/modules/mongo-logs.cfg
 RUN         mkdir -p /etc/shinken/custom_configs /usr/local/custom_plugins && \
                 chown -R shinken:shinken /etc/shinken/
 
