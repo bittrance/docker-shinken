@@ -29,8 +29,10 @@ you use it:
 tar cf - . | kubectl exec shinken -i -- catcher --reload='supervisorctl restart shinken-arbiter' /etc/shinken/custom_configs
 ```
 
-Attribution
------------
+License and attribution
+-----------------------
+This software is released under [MIT License](LICENSE.md).
+
 This repo is a fork of https://github.com/rohit01/docker_shinken adapted
 to Shinken 2.4 and in particular replacing Thruk with Shinken WebUI 2.
 Parts Copyright https://github.com/rohit01 2015.
