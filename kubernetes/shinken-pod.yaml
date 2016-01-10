@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: shinken
+  labels:
+    name: shinken
+spec:
+  containers:
+    - image: bittrance/docker-shinken:latest
+      name: shinken
+      ports:
+        - containerPort: 7767
+          name: shinken-http
+      volumeMounts:
+        - name: secrets-volume
+          mountPath: /var/lib/shinken/secrets
+    - image: mongo
+      name: mongodb
+      ports:
+        - containerPort: 27017
+          name: mongo
+      volumeMounts:
+        - name: shinken-volume
+          mountPath: /data/db
+    - image: bittrance/doorman:latest
+      name: doorman
+      ports:
+        - containerPort: 8080
+          name: http
+      env:
+        - name: DOORMAN_HOST
+          value: shinken.example.com
+        - name: DOORMAN_PORT
+          value: '8080'
+        - name: DOORMAN_PROXY_HOST
+          value: 127.0.0.1
+        - name: DOORMAN_PROXY_PORT
+          value: '7767'
+        - name: DOORMAN_MODULES
+          value: google
+        - name: DOORMAN_GOOGLE_APPID
+          value: zeappid.apps.googleusercontent.com
+        - name: DOORMAN_GOOGLE_APPSECRET
+          value: zesecret
+        - name: DOORMAN_GOOGLE_REQUIRED_EMAIL
+          value: ''
+        - name: DOORMAN_GOOGLE_REQUIRED_DOMAIN
+          value: example.com
+        - name: DOORMAN_SECRET
+          value: some-random-bytes
+# Password module configuration
+# - name: DOORMAN_PASSWORD_TOKEN
+#   value: YOUR-SAFE-TOKEN-HERE
+  volumes:
+    - name: shinken-volume
+      gcePersistentDisk:
+        pdName: shinken-mongodb
+        fsType: ext4
+    - name: secrets-volume
+      secret:
+        secretName: shinken-secrets

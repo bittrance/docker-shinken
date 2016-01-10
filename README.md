@@ -1,41 +1,36 @@
-Docker Shinken
-==============
+Docker Shinken geared to Kubernetes
+===================================
 
-This repository contains Dockerfile for automated builds of:
+This is a Docker image with a single-node Shinken container running
+version 2.4.2 with WebUI 2.2.1. At the moment, the image uses forks of
+Shinken and mod-retention-mongodb. I hope to get these changes included
+upstream, when the image will return to official releases.
 
-* Shinken: <https://registry.hub.docker.com/u/rohit01/shinken/>
-* shinken Thruk: <https://registry.hub.docker.com/u/rohit01/shinken_thruk/>
-* shinken Thruk Graphite: <https://registry.hub.docker.com/u/rohit01/shinken_thruk_graphite/>
+The container needs to be augmented with:
 
-Get started in 3 easy steps:
-===========================
+1) a mongodb container (currently allowing access without user/pass)
+2) a provider of X-Remote-User header (e.g. Doorman) **This means that
+exposing it directly to the Internet is a security risk**.
 
-1. Install [docker](https://docs.docker.com/installation/#installation). Select and pull one of the following docker image:
+to form a full installation.
 
-    * **Shinken**: It has basic shinken installation along with few must have modules like WebUI (Web Interface), standard nrpe plugins + few extra ones, nrpe-booster support and a lightweight web server (nginx). Link: <https://registry.hub.docker.com/u/rohit01/shinken/>
-    * **Shinken Thruk**: Shinken (as written above) + Thruk web interface. Internal web server nginx is replaced with apache2. Link: <https://registry.hub.docker.com/u/rohit01/shinken_thruk/>
-    * **Shinken Thruk Graphite**: Shinken Thruk (as written above) + graph support in WebUI. Graphs are stored and served using graphite. Retention is configured for 1 month on a per 2 minute basis. Link: <https://registry.hub.docker.com/u/rohit01/shinken_thruk_graphite/>
+This image is geared towards Kubernetes support. An [example Kubernetes
+setup](kubernetes/) is included for using Google Apps OAuth.
 
-    Sample Command: `$ sudo docker pull rohit01/shinken`
+In Kubernetes, getting at the Docker host is discouraged. We therefore
+need some method to update the configuration without recreating the
+pod. (If you have e.g. an NFS server that you can mount as config volume,
+that would work, but setting up NFS purely for this would be overkill.)
 
-2. Clone this project. There are three directories corresponding to the docker images mentioned above. Go inside the directory corresponding to your selected image. You will see a directory named: [custom_configs/](https://github.com/rohit01/docker_shinken/tree/master/shinken_basic/custom_configs). Keep all your configuration files here. A default configuration for monitoring docker host is already defined. User login details can be updated in this file: [htpasswd.users](https://github.com/rohit01/docker_shinken/blob/master/shinken_basic/custom_configs/htpasswd.users). File contains the documentation in comments.
+In order to update the configuration remotely, there is a script that
+accepts a config tar ball and updates the configuration. This is how
+you use it:
+```
+tar cf - . | kubectl exec shinken -i -- catcher --reload='supervisorctl restart shinken-arbiter' /etc/shinken/custom_configs
+```
 
-3. Run the docker image. Expose TCP port 80 to the base machine and mount custom_configs directory to /etc/shinken/custom_configs. Sample execution:
-
-    ```
-    $ git clone https://github.com/rohit01/docker_shinken.git
-    $ cd docker_shinken/shinken_basic
-    $ sudo docker run -d -v "$(pwd)/custom_configs:/etc/shinken/custom_configs" -p 80:80 rohit01/shinken
-    ```
-
-Open your browser and visit these urls (Default credential - admin/admin):
-
-1. **WebUI**: <http://localhost/>. Available on all three images.
-2. **Thruk UI**: <http://localhost/thruk/>. Available on shinken_thruk and shinken_thruk_graphite images.
-3. **Graphs**: <http://localhost/service/docker_shinken/http_port_7770#graphs>. Available only on shinken_thruk_graphite image.
-
-### Please Note:
-
-* Configuration changes are required only in one place/directory: custom_configs
-* The nrpe plugins installation directory is /usr/lib/nagios/plugins.
-* If you are using custom NRPE plugins, please mount your plugins directory inside docker container at /usr/local/custom_plugins. You need to define resource paths accordingly.
+Attribution
+-----------
+This repo is a fork of https://github.com/rohit01/docker_shinken adapted
+to Shinken 2.4 and in particular replacing Thruk with Shinken WebUI 2.
+Parts Copyright https://github.com/rohit01 2015.
