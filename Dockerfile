@@ -24,8 +24,14 @@ RUN         chown -R shinken:shinken /etc/shinken/ && \
                 su - shinken -c 'shinken install webui2' && \
                 su - shinken -c 'shinken install auth-cfg-password' && \
                 su - shinken -c 'shinken install booster-nrpe' && \
-                su - shinken -c 'shinken install retention-mongodb' && \
                 su - shinken -c 'shinken install mongo-logs'
+
+# Using a dir for this makes it easier to use kubernetes secret resources
+RUN         install -m 0700 -o shinken -g shinken -d /var/lib/shinken/secrets
+
+# Waiting for pull requests to go through
+RUN        su - shinken -c 'git clone -b improve-pymongo-usage https://github.com/bittrance/mod-retention-mongodb /tmp/mod-retention-mongodb' && \
+                su - shinken -c 'shinken install --local /tmp/mod-retention-mongodb'
 
 # Install check_nrpe plugin
 ADD         nrpe-2.15.tar.gz /usr/src/
