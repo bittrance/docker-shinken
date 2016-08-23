@@ -30,7 +30,7 @@ RUN         chown -R shinken:shinken /etc/shinken/ && \
 RUN         install -m 0700 -o shinken -g shinken -d /var/lib/shinken/secrets
 
 # Waiting for pull requests to go through
-RUN        su - shinken -c 'git clone -b improve-pymongo-usage https://github.com/bittrance/mod-retention-mongodb /tmp/mod-retention-mongodb' && \
+RUN        su - shinken -c 'git clone https://github.com/shinken-monitoring/mod-retention-mongodb /tmp/mod-retention-mongodb' && \
                 su - shinken -c 'shinken install --local /tmp/mod-retention-mongodb'
 
 # Install check_nrpe plugin
