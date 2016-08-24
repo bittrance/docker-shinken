@@ -2,9 +2,7 @@ Docker Shinken geared to Kubernetes
 ===================================
 
 This is a Docker image with a single-node Shinken container running
-version 2.4.3 with WebUI 2.2.1. At the moment, the image uses forks of
-Shinken and mod-retention-mongodb. I hope to get these changes included
-upstream, when the image will return to official releases.
+version 2.4.3 (actually master 73e7acb) with WebUI 2.4.2c. 
 
 The container needs to be augmented with:
 
