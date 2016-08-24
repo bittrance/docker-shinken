@@ -15,7 +15,7 @@ RUN         apt-get update && apt-get install -y python-pip \
                 ntp git
 RUN         useradd --create-home shinken && \
                 pip install bottle pymongo requests arrow && \
-                pip install git+https://github.com/bittrance/shinken.git@packaging-standard-config && \
+                pip install git+https://github.com/naparuba/shinken.git@master && \
                 update-rc.d -f shinken remove
 
 # Install shinken modules from shinken.io
